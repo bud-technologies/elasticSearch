@@ -20,7 +20,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/bud-technologies/elasticSearch/v7"
+	elastic "github.com/bud-technologies/elasticSearch/v7"
 )
 
 const (

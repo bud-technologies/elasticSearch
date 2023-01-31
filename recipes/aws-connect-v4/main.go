@@ -18,7 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/olivere/env"
 
-	"github.com/bud-technologies/elasticSearch/v7"
+	elastic "github.com/bud-technologies/elasticSearch/v7"
 	aws "github.com/bud-technologies/elasticSearch/v7/aws/v4"
 )
 

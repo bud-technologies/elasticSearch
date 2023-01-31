@@ -17,7 +17,7 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/bud-technologies/elasticSearch/v7"
+	elastic "github.com/bud-technologies/elasticSearch/v7"
 	"github.com/bud-technologies/elasticSearch/v7/config"
 )
 

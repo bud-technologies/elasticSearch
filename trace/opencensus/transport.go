@@ -56,12 +56,13 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	_, span := trace.StartSpan(req.Context(), "elastic:PerformRequest")
 	attrs := append([]trace.Attribute(nil), t.defaultAttributes...)
 	attrs = append(attrs,
-		trace.StringAttribute("Component", "github.com/bud-technologies/elasticSearch/v7"),
-		trace.StringAttribute("Method", req.Method),
+		trace.StringAttribute("Component", elastic
+	"github.com/bud-technologies/elasticSearch/v7"),
+	trace.StringAttribute("Method", req.Method),
 		trace.StringAttribute("URL", req.URL.Redacted()),
 		trace.StringAttribute("Hostname", req.URL.Hostname()),
 		trace.Int64Attribute("Port", atoi64(req.URL.Port())),
-	)
+)
 	span.AddAttributes(attrs...)
 
 	var (

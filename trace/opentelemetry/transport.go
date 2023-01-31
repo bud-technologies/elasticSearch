@@ -50,15 +50,16 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// See General (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/span-general.md)
 	// and HTTP (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md)
 	span.SetAttributes(
-		attribute.String("code.namespace", "github.com/bud-technologies/elasticSearch/v7"),
-		attribute.String("code.function", "PerformRequest"),
+		attribute.String("code.namespace", elastic
+	"github.com/bud-technologies/elasticSearch/v7"),
+	attribute.String("code.function", "PerformRequest"),
 		attribute.String("http.url", req.URL.Redacted()),
 		attribute.String("http.method", req.Method),
 		attribute.String("http.scheme", req.URL.Scheme),
 		attribute.String("http.host", req.URL.Hostname()),
 		attribute.String("http.path", req.URL.Path),
 		attribute.String("http.user_agent", req.UserAgent()),
-	)
+)
 
 	var (
 		resp *http.Response

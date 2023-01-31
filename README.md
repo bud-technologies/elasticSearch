@@ -42,7 +42,7 @@ to manage dependencies. Make sure to use a version such as `7.0.0` or later.
 To use Elastic, import:
 
 ```go
-import "github.com/bud-technologies/elasticSearch/v7"
+import elastic "github.com/bud-technologies/elasticSearch/v7"
 ```
 
 ### Elastic 7.0

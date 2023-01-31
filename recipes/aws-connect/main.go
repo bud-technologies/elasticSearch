@@ -18,7 +18,7 @@ import (
 	"github.com/olivere/env"
 	awsauth "github.com/smartystreets/go-aws-auth"
 
-	"github.com/bud-technologies/elasticSearch/v7"
+	elastic "github.com/bud-technologies/elasticSearch/v7"
 	"github.com/bud-technologies/elasticSearch/v7/aws"
 )
 
