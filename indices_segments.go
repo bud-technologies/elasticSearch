@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/bud-technologies/elasticSearch/v7/uritemplates"
 )
 
 // IndicesSegmentsService provides low level segments information that a

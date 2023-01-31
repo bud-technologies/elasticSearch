@@ -25,8 +25,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/olivere/elastic/v7"
-	"github.com/olivere/elastic/v7/config"
+	"github.com/bud-technologies/elasticSearch/v7"
+	"github.com/bud-technologies/elasticSearch/v7/config"
 )
 
 func main() {

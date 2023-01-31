@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/bud-technologies/elasticSearch/v7/uritemplates"
 )
 
 // GetService allows to get a typed JSON document from the index based
@@ -311,7 +311,7 @@ type GetResult struct {
 	Source      json.RawMessage        `json:"_source,omitempty"`
 	Found       bool                   `json:"found,omitempty"`
 	Fields      map[string]interface{} `json:"fields,omitempty"`
-	//Error     string                 `json:"error,omitempty"` // used only in MultiGet
+	// Error     string                 `json:"error,omitempty"` // used only in MultiGet
 	// TODO double-check that MultiGet now returns details error information
 	Error *ErrorDetails `json:"error,omitempty"` // only used in MultiGet
 }

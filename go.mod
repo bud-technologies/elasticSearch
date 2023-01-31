@@ -1,4 +1,4 @@
-module github.com/olivere/elastic/v7
+module github.com/bud-technologies/elasticSearch/v7
 
 go 1.17
 

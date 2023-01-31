@@ -6,7 +6,7 @@ Elastic is an [Elasticsearch](http://www.elasticsearch.org/) client for the
 [Go](http://www.golang.org/) programming language.
 
 [![Build Status](https://github.com/olivere/elastic/workflows/Test/badge.svg)](https://github.com/olivere/elastic/actions)
-[![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://pkg.go.dev/github.com/olivere/elastic/v7?tab=doc)
+[![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://pkg.go.dev/github.com/bud-technologies/elasticSearch/v7?tab=doc)
 [![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/olivere/elastic/master/LICENSE)
 
 See the [wiki](https://github.com/olivere/elastic/wiki) for additional information about Elastic.
@@ -23,7 +23,7 @@ Here's the version matrix:
 
 Elasticsearch version | Elastic version  | Package URL | Remarks |
 ----------------------|------------------|-------------|---------|
-7.x                   | 7.0              | [`github.com/olivere/elastic/v7`](https://github.com/olivere/elastic) ([source](https://github.com/olivere/elastic/tree/release-branch.v7) [doc](http://godoc.org/github.com/olivere/elastic)) | Use Go modules.
+7.x                   | 7.0              | [`github.com/bud-technologies/elasticSearch/v7`](https://github.com/olivere/elastic) ([source](https://github.com/olivere/elastic/tree/release-branch.v7) [doc](http://godoc.org/github.com/olivere/elastic)) | Use Go modules.
 6.x                   | 6.0              | [`github.com/olivere/elastic`](https://github.com/olivere/elastic) ([source](https://github.com/olivere/elastic/tree/release-branch.v6) [doc](http://godoc.org/github.com/olivere/elastic)) | Use a dependency manager (see below).
 5.x                   | 5.0              | [`gopkg.in/olivere/elastic.v5`](https://gopkg.in/olivere/elastic.v5) ([source](https://github.com/olivere/elastic/tree/release-branch.v5) [doc](http://godoc.org/gopkg.in/olivere/elastic.v5)) | Actively maintained.
 2.x                   | 3.0              | [`gopkg.in/olivere/elastic.v3`](https://gopkg.in/olivere/elastic.v3) ([source](https://github.com/olivere/elastic/tree/release-branch.v3) [doc](http://godoc.org/gopkg.in/olivere/elastic.v3)) | Deprecated. Please update.
@@ -42,7 +42,7 @@ to manage dependencies. Make sure to use a version such as `7.0.0` or later.
 To use Elastic, import:
 
 ```go
-import "github.com/olivere/elastic/v7"
+import "github.com/bud-technologies/elasticSearch/v7"
 ```
 
 ### Elastic 7.0

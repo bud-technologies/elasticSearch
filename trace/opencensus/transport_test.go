@@ -14,7 +14,7 @@ import (
 
 	"go.opencensus.io/trace"
 
-	"github.com/olivere/elastic/v7"
+	"github.com/bud-technologies/elasticSearch/v7"
 )
 
 func init() {
@@ -115,7 +115,7 @@ func TestTransport(t *testing.T) {
 	}
 	if attr, ok := span.Attributes["Component"].(string); !ok {
 		t.Fatalf("attribute %q not found", "Component")
-	} else if want, have := "github.com/olivere/elastic/v7", attr; want != have {
+	} else if want, have := "github.com/bud-technologies/elasticSearch/v7", attr; want != have {
 		t.Fatalf("want attribute=%q, have %q", want, have)
 	}
 	if attr, ok := span.Attributes["Method"].(string); !ok {

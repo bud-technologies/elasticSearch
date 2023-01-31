@@ -13,7 +13,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 
-	"github.com/olivere/elastic/v7"
+	"github.com/bud-technologies/elasticSearch/v7"
 )
 
 func TestTransportIntegration(t *testing.T) {
@@ -53,7 +53,7 @@ func TestTransportIntegration(t *testing.T) {
 	if want, have := "PerformRequest", span.OperationName; want != have {
 		t.Fatalf("want Span.OperationName=%q, have %q", want, have)
 	}
-	if want, have := "github.com/olivere/elastic/v7", span.Tag("component"); want != have {
+	if want, have := "github.com/bud-technologies/elasticSearch/v7", span.Tag("component"); want != have {
 		t.Fatalf("want component tag=%q, have %q", want, have)
 	}
 	httpURL, ok := span.Tag("http.url").(string)

@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/bud-technologies/elasticSearch/v7/uritemplates"
 )
 
 // XPackSecurityGetRoleService retrieves a role by its name.
@@ -174,7 +174,7 @@ type XPackSecurityRole struct {
 type XPackSecurityApplicationPrivileges struct {
 	Application string   `json:"application"`
 	Privileges  []string `json:"privileges"`
-	Resources  []string `json:"resources"`
+	Resources   []string `json:"resources"`
 }
 
 // XPackSecurityIndicesPermissions is the indices permission object

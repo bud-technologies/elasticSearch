@@ -18,7 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/olivere/elastic/v7"
+	"github.com/bud-technologies/elasticSearch/v7"
 )
 
 type Tweet struct {
@@ -298,13 +298,13 @@ func (t *TestCase) search() {
 			Id("1").
 			Do(ctx)
 		if err != nil {
-			//failf("Get failed: %v", err)
+			// failf("Get failed: %v", err)
 			t.runCh <- RunInfo{Success: false}
 			continue
 		}
 		if elastic.IsNotFound(err) {
-			//log.Printf("Document %s not found\n", "1")
-			//fmt.Printf("Got document %s in version %d from index %s, type %s\n", get1.Id, get1.Version, get1.Index, get1.Type)
+			// log.Printf("Document %s not found\n", "1")
+			// fmt.Printf("Got document %s in version %d from index %s, type %s\n", get1.Id, get1.Version, get1.Index, get1.Type)
 			t.runCh <- RunInfo{Success: false}
 			continue
 		}
@@ -318,18 +318,18 @@ func (t *TestCase) search() {
 			Pretty(true).                                   // pretty print request and response JSON
 			Do(ctx)                                         // execute
 		if err != nil {
-			//failf("Search failed: %v\n", err)
+			// failf("Search failed: %v\n", err)
 			t.runCh <- RunInfo{Success: false}
 			continue
 		}
 
 		// searchResult is of type SearchResult and returns hits, suggestions,
 		// and all kinds of other information from Elasticsearch.
-		//fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)
+		// fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)
 
 		// Number of hits
 		if searchResult.Hits.TotalHits.Value > 0 {
-			//fmt.Printf("Found a total of %d tweets\n", searchResult.Hits.TotalHits)
+			// fmt.Printf("Found a total of %d tweets\n", searchResult.Hits.TotalHits)
 
 			// Iterate through results
 			for _, hit := range searchResult.Hits.Hits {
@@ -340,17 +340,17 @@ func (t *TestCase) search() {
 				err := json.Unmarshal(hit.Source, &tweet)
 				if err != nil {
 					// Deserialization failed
-					//failf("Deserialize failed: %v\n", err)
+					// failf("Deserialize failed: %v\n", err)
 					t.runCh <- RunInfo{Success: false}
 					continue
 				}
 
 				// Work with tweet
-				//fmt.Printf("Tweet by %s: %s\n", t.User, t.Message)
+				// fmt.Printf("Tweet by %s: %s\n", t.User, t.Message)
 			}
 		} else {
 			// No hits
-			//fmt.Print("Found no tweets\n")
+			// fmt.Print("Found no tweets\n")
 		}
 
 		t.runCh <- RunInfo{Success: true}
