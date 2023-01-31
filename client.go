@@ -130,27 +130,29 @@ type Client struct {
 	infolog                   Logger       // information log for e.g. response times
 	tracelog                  Logger       // trace log for debugging
 	deprecationlog            func(*http.Request, *http.Response)
-	scheme                    string          // http or https
-	healthcheckEnabled        bool            // healthchecks enabled or disabled
-	healthcheckTimeoutStartup time.Duration   // time the healthcheck waits for a response from Elasticsearch on startup
-	healthcheckTimeout        time.Duration   // time the healthcheck waits for a response from Elasticsearch
-	healthcheckInterval       time.Duration   // interval between healthchecks
-	healthcheckStop           chan bool       // notify healthchecker to stop, and notify back
-	snifferEnabled            bool            // sniffer enabled or disabled
-	snifferTimeoutStartup     time.Duration   // time the sniffer waits for a response from nodes info API on startup
-	snifferTimeout            time.Duration   // time the sniffer waits for a response from nodes info API
-	snifferInterval           time.Duration   // interval between sniffing
-	snifferCallback           SnifferCallback // callback to modify the sniffing decision
-	snifferStop               chan bool       // notify sniffer to stop, and notify back
-	decoder                   Decoder         // used to decode data sent from Elasticsearch
-	basicAuthUsername         string          // username for HTTP Basic Auth
-	basicAuthPassword         string          // password for HTTP Basic Auth
-	sendGetBodyAs             string          // override for when sending a GET with a body
-	gzipEnabled               bool            // gzip compression enabled or disabled (default)
-	requiredPlugins           []string        // list of required plugins
-	retrier                   Retrier         // strategy for retries
-	retryStatusCodes          []int           // HTTP status codes where to retry automatically (with retrier)
-	headers                   http.Header     // a list of default headers to add to each request
+	scheme                    string             // http or https
+	healthcheckEnabled        bool               // healthchecks enabled or disabled
+	healthcheckTimeoutStartup time.Duration      // time the healthcheck waits for a response from Elasticsearch on startup
+	healthcheckTimeout        time.Duration      // time the healthcheck waits for a response from Elasticsearch
+	healthcheckInterval       time.Duration      // interval between healthchecks
+	healthcheckStop           chan bool          // notify healthchecker to stop, and notify back
+	snifferEnabled            bool               // sniffer enabled or disabled
+	snifferTimeoutStartup     time.Duration      // time the sniffer waits for a response from nodes info API on startup
+	snifferTimeout            time.Duration      // time the sniffer waits for a response from nodes info API
+	snifferInterval           time.Duration      // interval between sniffing
+	snifferCallback           SnifferCallback    // callback to modify the sniffing decision
+	snifferStop               chan bool          // notify sniffer to stop, and notify back
+	decoder                   Decoder            // used to decode data sent from Elasticsearch
+	basicAuthUsername         string             // username for HTTP Basic Auth
+	basicAuthPassword         string             // password for HTTP Basic Auth
+	sendGetBodyAs             string             // override for when sending a GET with a body
+	gzipEnabled               bool               // gzip compression enabled or disabled (default)
+	requiredPlugins           []string           // list of required plugins
+	retrier                   Retrier            // strategy for retries
+	retryStatusCodes          []int              // HTTP status codes where to retry automatically (with retrier)
+	headers                   http.Header        // a list of default headers to add to each request
+	beforePerformRequestFunc  PerformRequestFunc // execute before PerformRequest
+	afterPerformRequestFunc   PerformRequestFunc // execute after PerformRequest
 }
 
 // NewClient creates a new client to work with Elasticsearch.
@@ -340,6 +342,8 @@ func DialContext(ctx context.Context, options ...ClientOptionFunc) (*Client, err
 		retrier:                   noRetries, // no retries by default
 		retryStatusCodes:          nil,       // no automatic retries for specific HTTP status codes
 		deprecationlog:            noDeprecationLog,
+		beforePerformRequestFunc:  func(_ PerformRequestOptions, _ time.Time) {},
+		afterPerformRequestFunc:   func(_ PerformRequestOptions, _ time.Time) {},
 	}
 
 	// Run the options on it
@@ -749,6 +753,20 @@ func SetRetryStatusCodes(statusCodes ...int) ClientOptionFunc {
 func SetHeaders(headers http.Header) ClientOptionFunc {
 	return func(c *Client) error {
 		c.headers = headers
+		return nil
+	}
+}
+
+func SetBeforePerformRequestFunc(f PerformRequestFunc) ClientOptionFunc {
+	return func(c *Client) error {
+		c.beforePerformRequestFunc = f
+		return nil
+	}
+}
+
+func SetAfterPerformRequestFunc(f PerformRequestFunc) ClientOptionFunc {
+	return func(c *Client) error {
+		c.afterPerformRequestFunc = f
 		return nil
 	}
 }
@@ -1300,6 +1318,8 @@ type PerformRequestOptions struct {
 	Stream           bool
 }
 
+type PerformRequestFunc func(PerformRequestOptions, time.Time)
+
 // PerformRequest does a HTTP request to Elasticsearch.
 // It returns a response (which might be nil) and an error on failure.
 //
@@ -1311,6 +1331,14 @@ type PerformRequestOptions struct {
 // if PerformRequest returns an error.
 func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) (*Response, error) {
 	start := time.Now().UTC()
+	if c.beforePerformRequestFunc != nil {
+		c.beforePerformRequestFunc(opt, start)
+	}
+	defer func() {
+		if c.afterPerformRequestFunc != nil {
+			c.afterPerformRequestFunc(opt, start)
+		}
+	}()
 
 	c.mu.RLock()
 	timeout := c.healthcheckTimeout
