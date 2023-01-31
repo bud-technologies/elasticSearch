@@ -53,9 +53,8 @@ func TestTransportIntegration(t *testing.T) {
 	if want, have := "PerformRequest", span.OperationName; want != have {
 		t.Fatalf("want Span.OperationName=%q, have %q", want, have)
 	}
-	if want, have := elastic "github.com/bud-technologies/elasticSearch/v7", span.Tag("component")
-	want != have{
-		t.Fatalf("want component tag=%q, have %q", want, have),
+	if want, have := "github.com/bud-technologies/elasticSearch/v7", span.Tag("component"); want != have {
+		t.Fatalf("want component tag=%q, have %q", want, have)
 	}
 	httpURL, ok := span.Tag("http.url").(string)
 	if !ok || httpURL == "" {
