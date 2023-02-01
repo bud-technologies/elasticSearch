@@ -218,6 +218,10 @@ func (s *FieldCapsService) Do(ctx context.Context) (*FieldCapsResponse, error) {
 		Body:         body,
 		IgnoreErrors: []int{http.StatusNotFound},
 		Headers:      s.headers,
+		Info: &RequestInfo{
+			RequestType: "FieldCaps",
+			Index:       s.index,
+		},
 	})
 	if err != nil {
 		return nil, err

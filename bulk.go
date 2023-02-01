@@ -303,6 +303,10 @@ func (s *BulkService) Do(ctx context.Context) (*BulkResponse, error) {
 		ContentType: "application/x-ndjson",
 		Retrier:     s.retrier,
 		Headers:     s.headers,
+		Info: &RequestInfo{
+			RequestType: "Bulk",
+			Index:       []string{s.index},
+		},
 	})
 	if err != nil {
 		return nil, err

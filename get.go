@@ -282,6 +282,10 @@ func (s *GetService) Do(ctx context.Context) (*GetResult, error) {
 		Path:    path,
 		Params:  params,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "Get",
+			Index:       []string{s.index},
+		},
 	})
 	if err != nil {
 		return nil, err

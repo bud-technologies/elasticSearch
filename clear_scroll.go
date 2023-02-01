@@ -142,6 +142,10 @@ func (s *ClearScrollService) Do(ctx context.Context) (*ClearScrollResponse, erro
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "ClearScroll",
+			Index:       []string{},
+		},
 	})
 	if err != nil {
 		return nil, err

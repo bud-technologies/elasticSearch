@@ -644,6 +644,10 @@ func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 		Body:            body,
 		Headers:         s.headers,
 		MaxResponseSize: s.maxResponseSize,
+		Info: &RequestInfo{
+			RequestType: "Search",
+			Index:       s.index,
+		},
 	})
 	if err != nil {
 		return nil, err

@@ -205,6 +205,10 @@ func (s *SearchShardsService) Do(ctx context.Context) (*SearchShardsResponse, er
 		Path:    path,
 		Params:  params,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "SearchShards",
+			Index:       s.index,
+		},
 	})
 	if err != nil {
 		return nil, err

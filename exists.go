@@ -219,6 +219,10 @@ func (s *ExistsService) Do(ctx context.Context) (bool, error) {
 		Params:       params,
 		IgnoreErrors: []int{404},
 		Headers:      s.headers,
+		Info: &RequestInfo{
+			RequestType: "Exists",
+			Index:       []string{s.index},
+		},
 	})
 	if err != nil {
 		return false, err

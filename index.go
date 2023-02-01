@@ -349,6 +349,10 @@ func (s *IndexService) Do(ctx context.Context) (*IndexResponse, error) {
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "Index",
+			Index:       []string{s.index},
+		},
 	})
 	if err != nil {
 		return nil, err

@@ -269,6 +269,10 @@ func (s *DeleteService) Do(ctx context.Context) (*DeleteResponse, error) {
 		Params:       params,
 		IgnoreErrors: []int{http.StatusNotFound},
 		Headers:      s.headers,
+		Info: &RequestInfo{
+			RequestType: "Delete",
+			Index:       []string{s.index},
+		},
 	})
 	if err != nil {
 		return nil, err

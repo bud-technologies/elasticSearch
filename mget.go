@@ -179,6 +179,13 @@ func (s *MgetService) Do(ctx context.Context) (*MgetResponse, error) {
 		return nil, err
 	}
 
+	indexList := make([]string, 0)
+	for _, item := range s.items {
+		if item != nil {
+			indexList = append(indexList, item.index)
+		}
+	}
+
 	// Get response
 	res, err := s.client.PerformRequest(ctx, PerformRequestOptions{
 		Method:  "GET",
@@ -186,6 +193,10 @@ func (s *MgetService) Do(ctx context.Context) (*MgetResponse, error) {
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "Mget",
+			Index:       indexList,
+		},
 	})
 	if err != nil {
 		return nil, err

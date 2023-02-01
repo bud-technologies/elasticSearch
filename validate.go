@@ -318,6 +318,10 @@ func (s *ValidateService) Do(ctx context.Context) (*ValidateResponse, error) {
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "Validate",
+			Index:       s.index,
+		},
 	})
 	if err != nil {
 		return nil, err

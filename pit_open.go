@@ -228,6 +228,10 @@ func (s *OpenPointInTimeService) Do(ctx context.Context) (*OpenPointInTimeRespon
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "PitOpen",
+			Index:       s.index,
+		},
 	})
 	if err != nil {
 		return nil, err

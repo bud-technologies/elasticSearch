@@ -367,6 +367,10 @@ func (s *CountService) Do(ctx context.Context) (int64, error) {
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "Count",
+			Index:       s.index,
+		},
 	})
 	if err != nil {
 		return 0, err

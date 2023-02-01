@@ -422,6 +422,10 @@ func (s *ScrollService) first(ctx context.Context) (*SearchResult, error) {
 		Retrier:         s.retrier,
 		Headers:         s.headers,
 		MaxResponseSize: s.maxResponseSize,
+		Info: &RequestInfo{
+			RequestType: "Scroll",
+			Index:       s.indices,
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -570,6 +574,10 @@ func (s *ScrollService) next(ctx context.Context) (*SearchResult, error) {
 		Retrier:         s.retrier,
 		Headers:         s.headers,
 		MaxResponseSize: s.maxResponseSize,
+		Info: &RequestInfo{
+			RequestType: "Scroll",
+			Index:       s.indices,
+		},
 	})
 	if err != nil {
 		return nil, err

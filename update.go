@@ -383,6 +383,10 @@ func (s *UpdateService) Do(ctx context.Context) (*UpdateResponse, error) {
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "Update",
+			Index:       []string{s.index},
+		},
 	})
 	if err != nil {
 		return nil, err

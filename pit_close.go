@@ -156,6 +156,10 @@ func (s *ClosePointInTimeService) Do(ctx context.Context) (*ClosePointInTimeResp
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "PitClose",
+			Index:       []string{},
+		},
 	})
 	if err != nil {
 		return nil, err

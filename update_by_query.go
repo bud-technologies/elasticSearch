@@ -769,6 +769,10 @@ func (s *UpdateByQueryService) DoAsync(ctx context.Context) (*StartTaskResult, e
 		Body:         body,
 		Headers:      s.headers,
 		IgnoreErrors: []int{http.StatusConflict},
+		Info: &RequestInfo{
+			RequestType: "UpdateByQuery",
+			Index:       s.index,
+		},
 	})
 	if err != nil {
 		return nil, err

@@ -367,6 +367,10 @@ func (s *ExplainService) Do(ctx context.Context) (*ExplainResponse, error) {
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "Explain",
+			Index:       []string{s.index},
+		},
 	})
 	if err != nil {
 		return nil, err

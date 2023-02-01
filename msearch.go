@@ -142,6 +142,13 @@ func (s *MultiSearchService) Do(ctx context.Context) (*MultiSearchResult, error)
 	}
 	body := strings.Join(lines, "\n") + "\n" // add trailing \n
 
+	indexList := make([]string, 0)
+	for _, item := range s.requests {
+		if item != nil {
+			indexList = append(indexList, item.indices...)
+		}
+	}
+
 	// Get response
 	res, err := s.client.PerformRequest(ctx, PerformRequestOptions{
 		Method:  "GET",
@@ -149,6 +156,10 @@ func (s *MultiSearchService) Do(ctx context.Context) (*MultiSearchResult, error)
 		Params:  params,
 		Body:    body,
 		Headers: s.headers,
+		Info: &RequestInfo{
+			RequestType: "MSearch",
+			Index:       indexList,
+		},
 	})
 	if err != nil {
 		return nil, err

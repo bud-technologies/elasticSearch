@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1316,6 +1317,13 @@ type PerformRequestOptions struct {
 	Headers          http.Header
 	MaxResponseSize  int64
 	Stream           bool
+	Info             *RequestInfo
+}
+
+type RequestInfo struct {
+	Index       []string
+	RequestType string
+	ErrCode     string
 }
 
 type PerformRequestFunc func(PerformRequestOptions, time.Time)
@@ -1492,7 +1500,9 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 				continue // try again
 			}
 		}
-
+		if opt.Info != nil {
+			opt.Info.ErrCode = strconv.Itoa(res.StatusCode)
+		}
 		if !opt.Stream {
 			defer res.Body.Close()
 		}

@@ -740,6 +740,10 @@ func (s *DeleteByQueryService) DoAsync(ctx context.Context) (*StartTaskResult, e
 		Path:   path,
 		Params: params,
 		Body:   body,
+		Info: &RequestInfo{
+			RequestType: "DeleteByQuery",
+			Index:       s.index,
+		},
 	})
 	if err != nil {
 		return nil, err
