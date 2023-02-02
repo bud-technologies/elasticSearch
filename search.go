@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/bud-technologies/elasticSearch/v7/uritemplates"
 )
@@ -49,7 +50,8 @@ type SearchService struct {
 	restTotalHitsAsInt         *bool // rest_total_hits_as_int
 
 	ccsMinimizeRoundtrips *bool // ccs_minimize_roundtrips
-
+	searchCache           Cache
+	cacheTime             time.Duration
 }
 
 // NewSearchService creates a new service for searching in Elasticsearch.
@@ -64,6 +66,13 @@ func NewSearchService(client *Client) *SearchService {
 // Pretty tells Elasticsearch whether to return a formatted JSON response.
 func (s *SearchService) Pretty(pretty bool) *SearchService {
 	s.pretty = &pretty
+	return s
+}
+
+// Cache set a cache
+func (s *SearchService) Cache(cache Cache, expiration time.Duration) *SearchService {
+	s.searchCache = cache
+	s.cacheTime = expiration
 	return s
 }
 
@@ -613,11 +622,35 @@ func (s *SearchService) Validate() error {
 	return nil
 }
 
+func (s *SearchService) getMd5Id() (string, error) {
+	var md5Id string
+	str, err := json.Marshal(*s)
+	if err != nil {
+		return md5Id, err
+	}
+	md5Id = str2md5(str)
+	return md5Id, nil
+}
+
 // Do executes the search and returns a SearchResult.
 func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 	// Check pre-conditions
 	if err := s.Validate(); err != nil {
 		return nil, err
+	}
+
+	md5Id, err := s.getMd5Id()
+	if err != nil {
+		return nil, err
+	}
+	if s.searchCache != nil && md5Id != "" {
+		result, getErr := s.searchCache.Get(md5Id)
+		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
+			return nil, getErr
+		}
+		if v, ok := result.(SearchResult); ok {
+			return &v, nil
+		}
 	}
 
 	// Get URL for request
@@ -660,6 +693,12 @@ func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 		return nil, err
 	}
 	ret.Header = res.Header
+	if s.searchCache != nil && md5Id != "" {
+		err := s.searchCache.Put(md5Id, *ret, s.cacheTime)
+		if err != nil && s.client.errorlog != nil {
+			s.client.errorlog.Printf("put cache err", err)
+		}
+	}
 	return ret, nil
 }
 

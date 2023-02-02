@@ -6,10 +6,12 @@ package elastic
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // MgetService allows to get multiple documents based on an index,
@@ -34,6 +36,8 @@ type MgetService struct {
 	routing      string
 	storedFields []string
 	items        []*MultiGetItem
+	mgetCache    Cache
+	cacheTime    time.Duration
 }
 
 // NewMgetService initializes a new Multi GET API request call.
@@ -42,6 +46,13 @@ func NewMgetService(client *Client) *MgetService {
 		client: client,
 	}
 	return builder
+}
+
+// Cache set a cache
+func (s *MgetService) Cache(cache Cache, expiration time.Duration) *MgetService {
+	s.mgetCache = cache
+	s.cacheTime = expiration
+	return s
 }
 
 // Pretty tells Elasticsearch whether to return a formatted JSON response.
@@ -139,8 +150,32 @@ func (s *MgetService) Source() (interface{}, error) {
 	return source, nil
 }
 
+func (s *MgetService) getMd5Id() (string, error) {
+	var md5Id string
+	str, err := json.Marshal(*s)
+	if err != nil {
+		return md5Id, err
+	}
+	md5Id = str2md5(str)
+	return md5Id, nil
+}
+
 // Do executes the request.
 func (s *MgetService) Do(ctx context.Context) (*MgetResponse, error) {
+	md5Id, err := s.getMd5Id()
+	if err != nil {
+		return nil, err
+	}
+	if s.mgetCache != nil && md5Id != "" {
+		result, getErr := s.mgetCache.Get(md5Id)
+		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
+			return nil, getErr
+		}
+		if v, ok := result.(MgetResponse); ok {
+			return &v, nil
+		}
+	}
+
 	// Build url
 	path := "/_mget"
 
@@ -206,6 +241,12 @@ func (s *MgetService) Do(ctx context.Context) (*MgetResponse, error) {
 	ret := new(MgetResponse)
 	if err := s.client.decoder.Decode(res.Body, ret); err != nil {
 		return nil, err
+	}
+	if s.mgetCache != nil && md5Id != "" {
+		err := s.mgetCache.Put(md5Id, *ret, s.cacheTime)
+		if err != nil && s.client.errorlog != nil {
+			s.client.errorlog.Printf("put cache err", err)
+		}
 	}
 	return ret, nil
 }

@@ -1,6 +1,6 @@
 module github.com/bud-technologies/elasticSearch/v7
 
-go 1.17
+go 1.18
 
 require (
 	github.com/aws/aws-sdk-go v1.43.21
@@ -20,6 +20,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/smartystreets/assertions v1.1.1 // indirect
 	github.com/smartystreets/gunit v1.4.2 // indirect
 	go.opentelemetry.io/otel/trace v1.5.0 // indirect

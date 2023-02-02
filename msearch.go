@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // MultiSearch executes one or more searches in one roundtrip.
@@ -27,6 +28,8 @@ type MultiSearchService struct {
 	indices               []string
 	maxConcurrentRequests *int
 	preFilterShardSize    *int
+	msearchCache          Cache
+	cacheTime             time.Duration
 }
 
 func NewMultiSearchService(client *Client) *MultiSearchService {
@@ -34,6 +37,13 @@ func NewMultiSearchService(client *Client) *MultiSearchService {
 		client: client,
 	}
 	return builder
+}
+
+// Cache set a cache
+func (s *MultiSearchService) Cache(cache Cache, expiration time.Duration) *MultiSearchService {
+	s.msearchCache = cache
+	s.cacheTime = expiration
+	return s
 }
 
 // Pretty tells Elasticsearch whether to return a formatted JSON response.
@@ -96,7 +106,31 @@ func (s *MultiSearchService) PreFilterShardSize(size int) *MultiSearchService {
 	return s
 }
 
+func (s *MultiSearchService) getMd5Id() (string, error) {
+	var md5Id string
+	str, err := json.Marshal(*s)
+	if err != nil {
+		return md5Id, err
+	}
+	md5Id = str2md5(str)
+	return md5Id, nil
+}
+
 func (s *MultiSearchService) Do(ctx context.Context) (*MultiSearchResult, error) {
+	md5Id, err := s.getMd5Id()
+	if err != nil {
+		return nil, err
+	}
+	if s.msearchCache != nil && md5Id != "" {
+		result, getErr := s.msearchCache.Get(md5Id)
+		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
+			return nil, getErr
+		}
+		if v, ok := result.(MultiSearchResult); ok {
+			return &v, nil
+		}
+	}
+
 	// Build url
 	path := "/_msearch"
 
@@ -169,6 +203,12 @@ func (s *MultiSearchService) Do(ctx context.Context) (*MultiSearchResult, error)
 	ret := new(MultiSearchResult)
 	if err := s.client.decoder.Decode(res.Body, ret); err != nil {
 		return nil, err
+	}
+	if s.msearchCache != nil && md5Id != "" {
+		err := s.msearchCache.Put(md5Id, *ret, s.cacheTime)
+		if err != nil && s.client.errorlog != nil {
+			s.client.errorlog.Printf("put cache err", err)
+		}
 	}
 	return ret, nil
 }

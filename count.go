@@ -6,10 +6,12 @@ package elastic
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/bud-technologies/elasticSearch/v7/uritemplates"
 )
@@ -46,6 +48,8 @@ type CountService struct {
 	terminateAfter         *int
 	bodyJson               interface{}
 	bodyString             string
+	msearchCache           Cache
+	cacheTime              time.Duration
 }
 
 // NewCountService creates a new CountService.
@@ -53,6 +57,13 @@ func NewCountService(client *Client) *CountService {
 	return &CountService{
 		client: client,
 	}
+}
+
+// Cache set a cache
+func (s *CountService) Cache(cache Cache, expiration time.Duration) *CountService {
+	s.msearchCache = cache
+	s.cacheTime = expiration
+	return s
 }
 
 // Pretty tells Elasticsearch whether to return a formatted JSON response.
@@ -331,6 +342,16 @@ func (s *CountService) Validate() error {
 	return nil
 }
 
+func (s *CountService) getMd5Id() (string, error) {
+	var md5Id string
+	str, err := json.Marshal(*s)
+	if err != nil {
+		return md5Id, err
+	}
+	md5Id = str2md5(str)
+	return md5Id, nil
+}
+
 // Do executes the operation.
 func (s *CountService) Do(ctx context.Context) (int64, error) {
 	// Check pre-conditions
@@ -338,6 +359,19 @@ func (s *CountService) Do(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 
+	md5Id, err := s.getMd5Id()
+	if err != nil {
+		return 0, err
+	}
+	if s.msearchCache != nil && md5Id != "" {
+		result, getErr := s.msearchCache.Get(md5Id)
+		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
+			return 0, getErr
+		}
+		if v, ok := result.(CountResponse); ok {
+			return v.Count, nil
+		}
+	}
 	// Get URL for request
 	path, params, err := s.buildURL()
 	if err != nil {
@@ -382,6 +416,12 @@ func (s *CountService) Do(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	if ret != nil {
+		if s.msearchCache != nil && md5Id != "" {
+			err := s.msearchCache.Put(md5Id, *ret, s.cacheTime)
+			if err != nil && s.client.errorlog != nil {
+				s.client.errorlog.Printf("put cache err", err)
+			}
+		}
 		return ret.Count, nil
 	}
 

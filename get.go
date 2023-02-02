@@ -8,11 +8,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/bud-technologies/elasticSearch/v7/uritemplates"
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/bud-technologies/elasticSearch/v7/uritemplates"
+	"time"
 )
 
 // GetService allows to get a typed JSON document from the index based
@@ -42,6 +42,8 @@ type GetService struct {
 	versionType                   string
 	parent                        string
 	ignoreErrorsOnGeneratedFields *bool
+	getCache                      Cache
+	cacheTime                     time.Duration
 }
 
 // NewGetService creates a new GetService.
@@ -50,6 +52,13 @@ func NewGetService(client *Client) *GetService {
 		client: client,
 		typ:    "_doc",
 	}
+}
+
+// Cache set a cache
+func (s *GetService) Cache(cache Cache, expiration time.Duration) *GetService {
+	s.getCache = cache
+	s.cacheTime = expiration
+	return s
 }
 
 // Pretty tells Elasticsearch whether to return a formatted JSON response.
@@ -263,11 +272,35 @@ func (s *GetService) buildURL() (string, url.Values, error) {
 	return path, params, nil
 }
 
+func (s *GetService) getMd5Id() (string, error) {
+	var md5Id string
+	str, err := json.Marshal(*s)
+	if err != nil {
+		return md5Id, err
+	}
+	md5Id = str2md5(str)
+	return md5Id, nil
+}
+
 // Do executes the operation.
 func (s *GetService) Do(ctx context.Context) (*GetResult, error) {
 	// Check pre-conditions
 	if err := s.Validate(); err != nil {
 		return nil, err
+	}
+
+	md5Id, err := s.getMd5Id()
+	if err != nil {
+		return nil, err
+	}
+	if s.getCache != nil && md5Id != "" {
+		result, getErr := s.getCache.Get(md5Id)
+		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
+			return nil, getErr
+		}
+		if v, ok := result.(GetResult); ok {
+			return &v, nil
+		}
 	}
 
 	// Get URL for request
@@ -295,6 +328,13 @@ func (s *GetService) Do(ctx context.Context) (*GetResult, error) {
 	ret := new(GetResult)
 	if err := s.client.decoder.Decode(res.Body, ret); err != nil {
 		return nil, err
+	}
+
+	if s.getCache != nil && md5Id != "" {
+		err := s.getCache.Put(md5Id, *ret, s.cacheTime)
+		if err != nil && s.client.errorlog != nil {
+			s.client.errorlog.Printf("put cache err", err)
+		}
 	}
 	return ret, nil
 }
