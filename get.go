@@ -272,16 +272,6 @@ func (s *GetService) buildURL() (string, url.Values, error) {
 	return path, params, nil
 }
 
-func (s *GetService) getMd5Id() (string, error) {
-	var md5Id string
-	str, err := json.Marshal(*s)
-	if err != nil {
-		return md5Id, err
-	}
-	md5Id = str2md5(str)
-	return md5Id, nil
-}
-
 // Do executes the operation.
 func (s *GetService) Do(ctx context.Context) (*GetResult, error) {
 	// Check pre-conditions
@@ -289,17 +279,17 @@ func (s *GetService) Do(ctx context.Context) (*GetResult, error) {
 		return nil, err
 	}
 
-	md5Id, err := s.getMd5Id()
-	if err != nil {
-		return nil, err
-	}
-	if s.getCache != nil && md5Id != "" {
-		result, getErr := s.getCache.Get(md5Id)
+	if s.getCache != nil {
+		result, getErr := s.getCache.Get(ctx, Get)
 		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
 			return nil, getErr
-		}
-		if v, ok := result.(GetResult); ok {
-			return &v, nil
+		} else if getErr == nil && result != "" {
+			rsp := &GetResult{}
+			err := json.Unmarshal([]byte(result), rsp)
+			if err != nil {
+				return nil, err
+			}
+			return rsp, nil
 		}
 	}
 
@@ -308,7 +298,6 @@ func (s *GetService) Do(ctx context.Context) (*GetResult, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// Get HTTP response
 	res, err := s.client.PerformRequest(ctx, PerformRequestOptions{
 		Method:  "GET",
@@ -316,7 +305,7 @@ func (s *GetService) Do(ctx context.Context) (*GetResult, error) {
 		Params:  params,
 		Headers: s.headers,
 		Info: &RequestInfo{
-			RequestType: "Get",
+			RequestType: Get,
 			Index:       []string{s.index},
 		},
 	})
@@ -330,8 +319,12 @@ func (s *GetService) Do(ctx context.Context) (*GetResult, error) {
 		return nil, err
 	}
 
-	if s.getCache != nil && md5Id != "" {
-		err := s.getCache.Put(md5Id, *ret, s.cacheTime)
+	if s.getCache != nil {
+		retStr, err := json.Marshal(*ret)
+		if err != nil {
+			s.client.errorlog.Printf("Marshal ret err", err)
+		}
+		err = s.getCache.Put(ctx, Get, string(retStr), s.cacheTime)
 		if err != nil && s.client.errorlog != nil {
 			s.client.errorlog.Printf("put cache err", err)
 		}

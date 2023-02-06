@@ -639,17 +639,17 @@ func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 		return nil, err
 	}
 
-	md5Id, err := s.getMd5Id()
-	if err != nil {
-		return nil, err
-	}
-	if s.searchCache != nil && md5Id != "" {
-		result, getErr := s.searchCache.Get(md5Id)
+	if s.searchCache != nil {
+		result, getErr := s.searchCache.Get(ctx, Search)
 		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
 			return nil, getErr
-		}
-		if v, ok := result.(SearchResult); ok {
-			return &v, nil
+		} else if getErr == nil && result != "" {
+			rsp := &SearchResult{}
+			err := json.Unmarshal([]byte(result), rsp)
+			if err != nil {
+				return nil, err
+			}
+			return rsp, nil
 		}
 	}
 
@@ -678,7 +678,7 @@ func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 		Headers:         s.headers,
 		MaxResponseSize: s.maxResponseSize,
 		Info: &RequestInfo{
-			RequestType: "Search",
+			RequestType: Search,
 			Index:       s.index,
 		},
 	})
@@ -693,8 +693,12 @@ func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 		return nil, err
 	}
 	ret.Header = res.Header
-	if s.searchCache != nil && md5Id != "" {
-		err := s.searchCache.Put(md5Id, *ret, s.cacheTime)
+	if s.searchCache != nil {
+		retStr, err := json.Marshal(*ret)
+		if err != nil {
+			s.client.errorlog.Printf("Marshal ret err", err)
+		}
+		err = s.searchCache.Put(ctx, Search, string(retStr), s.cacheTime)
 		if err != nil && s.client.errorlog != nil {
 			s.client.errorlog.Printf("put cache err", err)
 		}

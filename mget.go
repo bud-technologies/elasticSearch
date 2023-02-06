@@ -162,17 +162,17 @@ func (s *MgetService) getMd5Id() (string, error) {
 
 // Do executes the request.
 func (s *MgetService) Do(ctx context.Context) (*MgetResponse, error) {
-	md5Id, err := s.getMd5Id()
-	if err != nil {
-		return nil, err
-	}
-	if s.mgetCache != nil && md5Id != "" {
-		result, getErr := s.mgetCache.Get(md5Id)
+	if s.mgetCache != nil {
+		result, getErr := s.mgetCache.Get(ctx, MGet)
 		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
 			return nil, getErr
-		}
-		if v, ok := result.(MgetResponse); ok {
-			return &v, nil
+		} else if getErr == nil && result != "" {
+			rsp := &MgetResponse{}
+			err := json.Unmarshal([]byte(result), rsp)
+			if err != nil {
+				return nil, err
+			}
+			return rsp, nil
 		}
 	}
 
@@ -229,7 +229,7 @@ func (s *MgetService) Do(ctx context.Context) (*MgetResponse, error) {
 		Body:    body,
 		Headers: s.headers,
 		Info: &RequestInfo{
-			RequestType: "Mget",
+			RequestType: MGet,
 			Index:       indexList,
 		},
 	})
@@ -242,8 +242,12 @@ func (s *MgetService) Do(ctx context.Context) (*MgetResponse, error) {
 	if err := s.client.decoder.Decode(res.Body, ret); err != nil {
 		return nil, err
 	}
-	if s.mgetCache != nil && md5Id != "" {
-		err := s.mgetCache.Put(md5Id, *ret, s.cacheTime)
+	if s.mgetCache != nil {
+		retStr, err := json.Marshal(*ret)
+		if err != nil {
+			s.client.errorlog.Printf("Marshal ret err", err)
+		}
+		err = s.mgetCache.Put(ctx, MGet, string(retStr), s.cacheTime)
 		if err != nil && s.client.errorlog != nil {
 			s.client.errorlog.Printf("put cache err", err)
 		}

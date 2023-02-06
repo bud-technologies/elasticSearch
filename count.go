@@ -48,7 +48,7 @@ type CountService struct {
 	terminateAfter         *int
 	bodyJson               interface{}
 	bodyString             string
-	msearchCache           Cache
+	countCache             Cache
 	cacheTime              time.Duration
 }
 
@@ -61,7 +61,7 @@ func NewCountService(client *Client) *CountService {
 
 // Cache set a cache
 func (s *CountService) Cache(cache Cache, expiration time.Duration) *CountService {
-	s.msearchCache = cache
+	s.countCache = cache
 	s.cacheTime = expiration
 	return s
 }
@@ -359,17 +359,17 @@ func (s *CountService) Do(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 
-	md5Id, err := s.getMd5Id()
-	if err != nil {
-		return 0, err
-	}
-	if s.msearchCache != nil && md5Id != "" {
-		result, getErr := s.msearchCache.Get(md5Id)
+	if s.countCache != nil {
+		result, getErr := s.countCache.Get(ctx, Count)
 		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
 			return 0, getErr
-		}
-		if v, ok := result.(CountResponse); ok {
-			return v.Count, nil
+		} else if getErr == nil && result != "" {
+			rsp := &CountResponse{}
+			err := json.Unmarshal([]byte(result), rsp)
+			if err != nil {
+				return 0, err
+			}
+			return rsp.Count, nil
 		}
 	}
 	// Get URL for request
@@ -402,7 +402,7 @@ func (s *CountService) Do(ctx context.Context) (int64, error) {
 		Body:    body,
 		Headers: s.headers,
 		Info: &RequestInfo{
-			RequestType: "Count",
+			RequestType: Count,
 			Index:       s.index,
 		},
 	})
@@ -416,8 +416,12 @@ func (s *CountService) Do(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	if ret != nil {
-		if s.msearchCache != nil && md5Id != "" {
-			err := s.msearchCache.Put(md5Id, *ret, s.cacheTime)
+		if s.countCache != nil {
+			retStr, err := json.Marshal(*ret)
+			if err != nil {
+				s.client.errorlog.Printf("Marshal ret err", err)
+			}
+			err = s.countCache.Put(ctx, Count, string(retStr), s.cacheTime)
 			if err != nil && s.client.errorlog != nil {
 				s.client.errorlog.Printf("put cache err", err)
 			}

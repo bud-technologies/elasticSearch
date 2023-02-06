@@ -84,6 +84,15 @@ const (
 	off = -1 * time.Second
 )
 
+// requestType
+const (
+	Get     = "Get"
+	MGet    = "MGet"
+	Search  = "Search"
+	MSearch = "MSearch"
+	Count   = "Count"
+)
+
 var (
 	// nilByte is used in JSON marshal/unmarshal
 	nilByte = []byte("null")
@@ -343,8 +352,8 @@ func DialContext(ctx context.Context, options ...ClientOptionFunc) (*Client, err
 		retrier:                   noRetries, // no retries by default
 		retryStatusCodes:          nil,       // no automatic retries for specific HTTP status codes
 		deprecationlog:            noDeprecationLog,
-		beforePerformRequestFunc:  func(_ PerformRequestOptions, _ time.Time) {},
-		afterPerformRequestFunc:   func(_ PerformRequestOptions, _ time.Time) {},
+		beforePerformRequestFunc:  func(_ PerformRequestOptions, _ time.Time, _ error) {},
+		afterPerformRequestFunc:   func(_ PerformRequestOptions, _ time.Time, _ error) {},
 	}
 
 	// Run the options on it
@@ -1326,7 +1335,7 @@ type RequestInfo struct {
 	ErrCode     string
 }
 
-type PerformRequestFunc func(PerformRequestOptions, time.Time)
+type PerformRequestFunc func(PerformRequestOptions, time.Time, error)
 
 // PerformRequest does a HTTP request to Elasticsearch.
 // It returns a response (which might be nil) and an error on failure.
@@ -1339,12 +1348,13 @@ type PerformRequestFunc func(PerformRequestOptions, time.Time)
 // if PerformRequest returns an error.
 func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) (*Response, error) {
 	start := time.Now().UTC()
+	var err error
 	if c.beforePerformRequestFunc != nil {
-		c.beforePerformRequestFunc(opt, start)
+		c.beforePerformRequestFunc(opt, start, err)
 	}
 	defer func() {
 		if c.afterPerformRequestFunc != nil {
-			c.afterPerformRequestFunc(opt, start)
+			c.afterPerformRequestFunc(opt, start, err)
 		}
 	}()
 
@@ -1377,7 +1387,6 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 		return false
 	}
 
-	var err error
 	var conn *conn
 	var req *Request
 	var resp *Response

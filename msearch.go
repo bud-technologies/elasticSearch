@@ -117,17 +117,17 @@ func (s *MultiSearchService) getMd5Id() (string, error) {
 }
 
 func (s *MultiSearchService) Do(ctx context.Context) (*MultiSearchResult, error) {
-	md5Id, err := s.getMd5Id()
-	if err != nil {
-		return nil, err
-	}
-	if s.msearchCache != nil && md5Id != "" {
-		result, getErr := s.msearchCache.Get(md5Id)
+	if s.msearchCache != nil {
+		result, getErr := s.msearchCache.Get(ctx, MSearch)
 		if getErr != nil && !getErr.IsTimeOutErr() && !getErr.IsNotFoundErr() {
 			return nil, getErr
-		}
-		if v, ok := result.(MultiSearchResult); ok {
-			return &v, nil
+		} else if getErr == nil && result != "" {
+			rsp := &MultiSearchResult{}
+			err := json.Unmarshal([]byte(result), rsp)
+			if err != nil {
+				return nil, err
+			}
+			return rsp, nil
 		}
 	}
 
@@ -204,8 +204,12 @@ func (s *MultiSearchService) Do(ctx context.Context) (*MultiSearchResult, error)
 	if err := s.client.decoder.Decode(res.Body, ret); err != nil {
 		return nil, err
 	}
-	if s.msearchCache != nil && md5Id != "" {
-		err := s.msearchCache.Put(md5Id, *ret, s.cacheTime)
+	if s.msearchCache != nil {
+		retStr, err := json.Marshal(*ret)
+		if err != nil {
+			s.client.errorlog.Printf("Marshal ret err", err)
+		}
+		err = s.msearchCache.Put(ctx, MSearch, string(retStr), s.cacheTime)
 		if err != nil && s.client.errorlog != nil {
 			s.client.errorlog.Printf("put cache err", err)
 		}
