@@ -1348,13 +1348,13 @@ type PerformRequestFunc func(PerformRequestOptions, time.Time, error)
 // if PerformRequest returns an error.
 func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) (*Response, error) {
 	start := time.Now().UTC()
-	var err error
+	var collectErr error
 	if c.beforePerformRequestFunc != nil {
-		c.beforePerformRequestFunc(opt, start, err)
+		c.beforePerformRequestFunc(opt, start, collectErr)
 	}
 	defer func() {
 		if c.afterPerformRequestFunc != nil {
-			c.afterPerformRequestFunc(opt, start, err)
+			c.afterPerformRequestFunc(opt, start, collectErr)
 		}
 	}()
 
@@ -1387,6 +1387,7 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 		return false
 	}
 
+	var err error
 	var conn *conn
 	var req *Request
 	var resp *Response
@@ -1418,9 +1419,11 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 			}
 			wait, ok, rerr := retrier.Retry(ctx, n, nil, nil, err)
 			if rerr != nil {
+				collectErr = rerr
 				return nil, rerr
 			}
 			if !ok {
+				collectErr = err
 				return nil, err
 			}
 			retried = true
@@ -1429,12 +1432,14 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 		}
 		if err != nil {
 			c.errorf("elastic: cannot get connection from pool")
+			collectErr = err
 			return nil, err
 		}
 
 		req, err = NewRequest(opt.Method, conn.URL()+pathWithParams)
 		if err != nil {
 			c.errorf("elastic: cannot create request for %s %s: %v", strings.ToUpper(opt.Method), conn.URL()+pathWithParams, err)
+			collectErr = err
 			return nil, err
 		}
 		if basicAuth {
@@ -1464,6 +1469,7 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 			err = req.SetBody(opt.Body, gzipEnabled)
 			if err != nil {
 				c.errorf("elastic: couldn't set body %+v for request: %v", opt.Body, err)
+				collectErr = err
 				return nil, err
 			}
 		}
@@ -1475,6 +1481,7 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 		res, err := c.c.Do((*http.Request)(req).WithContext(ctx))
 		if IsContextErr(err) {
 			// Proceed, but don't mark the node as dead
+			collectErr = err
 			return nil, err
 		}
 		if err != nil {
@@ -1483,11 +1490,13 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 			if rerr != nil {
 				c.errorf("elastic: %s is dead", conn.URL())
 				conn.MarkAsDead()
+				collectErr = rerr
 				return nil, rerr
 			}
 			if !ok {
 				c.errorf("elastic: %s is dead", conn.URL())
 				conn.MarkAsDead()
+				collectErr = err
 				return nil, err
 			}
 			retried = true
@@ -1500,6 +1509,7 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 			if rerr != nil {
 				c.errorf("elastic: %s is dead", conn.URL())
 				conn.MarkAsDead()
+				collectErr = rerr
 				return nil, rerr
 			}
 			if ok {
@@ -1532,6 +1542,7 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 			// No retry if request succeeded
 			// We still try to return a response.
 			resp, _ = c.newResponse(res, opt.MaxResponseSize, opt.Stream)
+			collectErr = err
 			return resp, err
 		}
 
@@ -1540,6 +1551,7 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 
 		resp, err = c.newResponse(res, opt.MaxResponseSize, opt.Stream)
 		if err != nil {
+			collectErr = err
 			return nil, err
 		}
 
