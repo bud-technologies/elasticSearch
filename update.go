@@ -393,7 +393,7 @@ func (s *UpdateService) Do(ctx context.Context) (*UpdateResponse, error) {
 	ret := new(UpdateResponse)
 	if res != nil && res.Body != nil {
 		if err := s.client.decoder.Decode(res.Body, ret); err != nil {
-			return nil, err
+			return ret, err
 		}
 	}
 	return ret, err
