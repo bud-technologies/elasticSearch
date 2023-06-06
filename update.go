@@ -388,16 +388,15 @@ func (s *UpdateService) Do(ctx context.Context) (*UpdateResponse, error) {
 			Index:       []string{s.index},
 		},
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// Return result
 	ret := new(UpdateResponse)
-	if err := s.client.decoder.Decode(res.Body, ret); err != nil {
-		return nil, err
+	if res != nil && res.Body != nil {
+		if err := s.client.decoder.Decode(res.Body, ret); err != nil {
+			return nil, err
+		}
 	}
-	return ret, nil
+	return ret, err
 }
 
 // UpdateResponse is the result of updating a document in Elasticsearch.
